@@ -1,5 +1,16 @@
 # CSC-SQL: Corrective Self-Consistency in Text-to-SQL via Reinforcement Learning
 
+### Important Links
+
+📖[Arxiv Paper](https://arxiv.org/abs/2505.1327) |
+🤗[HuggingFace](https://huggingface.co/collections/cycloneboy/csc-sql-6835c4a52da10c54bbe14f8e) |
+🤖[ModelScope](https://modelscope.cn/collections/CSC-SQL-8542177708b643) |
+
+## News
++ `May 27, 2025`: The CSC-SQL 32B model achieved an Execution Accuracy (EX) of 73.67% on the BIRD test set, while the 7B model attained an EX of 71.72%, surpassing all other known methods based on open-source models.
++ `May 25, 2025`: Release model and inference code
++ `May 19, 2025`: Publish the paper to arxiv
+
 ## Introduction
 
 > Large language models (LLMs) have demonstrated strong capabilities in translating natural language questions about
@@ -19,9 +30,6 @@
 
 ![csc_sql_framework](data/image/csc_sql_framework.png)
 
-**Paper Link:** [https://arxiv.org/abs/2505.13271](https://arxiv.org/abs/2505.13271)
-
-**GitHub Link:** [https://github.com/CycloneBoy/csc_sql](https://github.com/CycloneBoy/csc_sql)
 
 ## Main Results
 
