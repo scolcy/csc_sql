@@ -2,7 +2,7 @@
 
 ### Important Links
 
-📖[Arxiv Paper](https://arxiv.org/abs/2505.1327) |
+📖[Arxiv Paper](https://arxiv.org/abs/2505.13271) |
 🤗[HuggingFace](https://huggingface.co/collections/cycloneboy/csc-sql-6835c4a52da10c54bbe14f8e) |
 🤖[ModelScope](https://modelscope.cn/collections/CSC-SQL-8542177708b643) |
 
