@@ -37,7 +37,8 @@
 ![csc_sql_result](data/image/csc_sql_result.png)
 
 Performance Comparison of different Text-to-SQL methods on BIRD dev and test dataset.
-![csc_sql_result main](data/image/csc_sql_result_main.png)
+[csc_sql_result main](data/image/csc_sql_result_main.png)
+<img src="data/image/csc_sql_result_main.png"  height="500" alt="csc_sql_result main">
 
 ## Model
 
@@ -56,6 +57,7 @@ Performance Comparison of different Text-to-SQL methods on BIRD dev and test dat
 | **Model and Dataset**                 | Modelscope                                                                                      | HuggingFace                                                                                |
 |---------------------------------------|-------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------|
 | bird train and dev dataset            | [🤖 Modelscope](https://modelscope.cn/datasets/cycloneboy/bird_train)                           | [🤗 HuggingFace](https://huggingface.co/datasets/cycloneboy/bird_train) |
+
 bird GRPO dataset file description
 
 ```shell
