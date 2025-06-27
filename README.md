@@ -7,6 +7,7 @@
 🤖[ModelScope](https://modelscope.cn/collections/CSC-SQL-8542177708b643) |
 
 ## News
++ `June 27, 2025`: Uploaded the dataset and grpo training code for grpo training
 + `May 27, 2025`: The CSC-SQL 32B model achieved an Execution Accuracy (EX) of 73.67% on the BIRD test set, while the 7B model attained an EX of 71.72%, surpassing all other known methods based on open-source models.
 + `May 25, 2025`: Release model and inference code
 + `May 19, 2025`: Publish the paper to arxiv
@@ -35,6 +36,9 @@
 
 ![csc_sql_result](data/image/csc_sql_result.png)
 
+Performance Comparison of different Text-to-SQL methods on BIRD dev and test dataset.
+![csc_sql_result main](data/image/csc_sql_result_main.png)
+
 ## Model
 
 | **Model and Dataset**                 | Modelscope                                                                                      | HuggingFace                                                                                |
@@ -47,6 +51,25 @@
 | CscSQL-Grpo-Qwen2.5-Coder-7B-Instruct | [🤖 Modelscope](https://modelscope.cn/models/cycloneboy/CscSQL-Grpo-Qwen2.5-Coder-7B-Instruct)  | [🤗 HuggingFace](https://huggingface.co/cycloneboy/CscSQL-Grpo-Qwen2.5-Coder-7B-Instruct)  |
 | CscSQL-Grpo-XiYanSQL-QwenCoder-7B-2502 | [🤖 Modelscope](https://modelscope.cn/models/cycloneboy/CscSQL-Grpo-XiYanSQL-QwenCoder-7B-2502) | [🤗 HuggingFace](https://huggingface.co/cycloneboy/CscSQL-Grpo-XiYanSQL-QwenCoder-7B-2502) |
 
+## Dataset
+
+| **Model and Dataset**                 | Modelscope                                                                                      | HuggingFace                                                                                |
+|---------------------------------------|-------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------|
+| bird train and dev dataset            | [🤖 Modelscope](https://modelscope.cn/datasets/cycloneboy/bird_train)                           | [🤗 HuggingFace](https://huggingface.co/datasets/cycloneboy/bird_train) |
+bird GRPO dataset file description
+
+```shell
+# Original bird training and development sets directly obtained from the seeklhy/SynSQL-2.5M dataset (OmniSQL)
+bird_train/train_bird.json
+bird_train/dev_bird.json
+# Dataset for sql generate grpo training organized from seeklhy/SynSQL-2.5M dataset  (OmniSQL)
+bird_train/train_sql_generate_omnisql_bird.json
+bird_train/dev_sql_generate_omnisql_bird.json
+# Generated merged revision training set for bird
+bird_train/train_merge_bird.json
+
+```
+
 ## Train and Eval
 
 ### Eval docs
@@ -56,14 +79,16 @@
 
 ### Train docs
 
-- [TODO]()
+- [GRPO train bird ](docs/train_grpo_bird.md)
+
 
 ## TODO
 
 - [x] Release inference code
 - [x] Upload Model
+- [x] Release training code
 - [ ] Fix bug
-- [ ] Release training code
+- [ ] Update doc
 
 ## Thanks to the following projects
 

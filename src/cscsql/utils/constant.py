@@ -46,3 +46,7 @@ class Constants(object):
 
     EVAL_FILE_NAME = TEST_FILE_NAME if DATASET_MODE == 'test' else DEV_FILE_NAME
 
+    SQL_DATASET_DIR = getenv("SQL_DATASET_DIR", DATASET_DIR)
+    SQL_DATASET_DIR_TRAIN = getenv("SQL_DATASET_DIR_TRAIN", f"{DATASET_DIR}/{DATASET_NAME}/train/train_databases")
+    SQL_DATASET_DIR_DEV = getenv("SQL_DATASET_DIR_DEV", f"{DATASET_DIR}/{DATASET_NAME}/dev/dev_databases")
+

@@ -548,10 +548,19 @@ Candidate B execute result:
         return db_path
 
     @staticmethod
-    def get_all_db_full_schema_and_sample(db_root):
+    def get_all_db_full_schema_and_sample(db_root: str, sample_limit=3):
         all_db_ids = FileUtils.list_dir(db_root)
         db_full_schema_config = {}
         db_sample_config = defaultdict(dict)
+
+        save_base = f"{db_root}"
+        db_full_schema_config_file = f"{save_base}db_full_schema_config.json"
+        db_sample_config_file = f"{save_base}db_sample_config.json"
+        if os.path.exists(db_full_schema_config_file) and os.path.exists(db_sample_config_file):
+            db_full_schema_config = FileUtils.load_json(db_full_schema_config_file)
+            db_sample_config = FileUtils.load_json(db_sample_config_file)
+            return db_full_schema_config, db_sample_config
+
         for db_id in all_db_ids:
             db_uri = CommonUtils.get_db_path(db_root=db_root, db_id=db_id)
             db_full_schema = SqliteDbUtils.get_db_table_and_columns(cursor=None, db_path=db_uri)
@@ -559,9 +568,16 @@ Candidate B execute result:
 
             cursor = SqliteDbUtils.get_cursor_from_path(db_uri)
             for table_name in db_full_schema.keys():
-                sample_rows = SqliteDbUtils.get_table_sample_rows(cursor, table_name, sample_limit=3,
+                sample_rows = SqliteDbUtils.get_table_sample_rows(cursor, table_name, sample_limit=sample_limit,
                                                                   db_uri=db_uri)
                 db_sample_config[db_id][table_name] = sample_rows
+
+        if not os.path.exists(db_full_schema_config_file):
+            FileUtils.dump_json(db_full_schema_config_file, db_full_schema_config)
+
+        if not os.path.exists(db_sample_config_file):
+            FileUtils.dump_json(db_sample_config_file, db_sample_config)
+
         return db_full_schema_config, db_sample_config
 
     @staticmethod
