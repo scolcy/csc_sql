@@ -109,4 +109,14 @@ bird_train/train_merge_bird.json
       primaryClass={cs.CL},
       url={https://arxiv.org/abs/2505.13271}, 
 }
+
+@misc{sheng2025slmsqlexplorationsmalllanguage,
+      title={SLM-SQL: An Exploration of Small Language Models for Text-to-SQL}, 
+      author={Lei Sheng and Shuai-Shuai Xu},
+      year={2025},
+      eprint={2507.22478},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      url={https://arxiv.org/abs/2507.22478}, 
+}
 ```
