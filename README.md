@@ -7,6 +7,7 @@
 🤖[ModelScope](https://modelscope.cn/collections/CSC-SQL-8542177708b643) |
 
 ## News
++ `August 12, 2025`: The CSC-SQL prediction results on the BIRD Dev dataset.
 + `June 31, 2025`: Add another related paper: [SLM-SQL: An Exploration of Small Language Models for Text-to-SQL](https://arxiv.org/abs/2507.22478)
 + `June 27, 2025`: Uploaded the dataset and grpo training code for grpo training
 + `May 27, 2025`: The CSC-SQL 32B model achieved an Execution Accuracy (EX) of 73.67% on the BIRD test set, while the 7B model attained an EX of 71.72%, surpassing all other known methods based on open-source models.
