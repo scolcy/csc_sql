@@ -75,12 +75,12 @@ N_SQL_MERGE=8
 MODEL_BASE_DIR="${DATASET_BASE_DIR}/model"
 MODEL_TABLE_LINK="none"
 # 7B size SQL merge model path
-MODEL_SQL_MERGE="cycloneboy/CscSQL-Merge-Qwen2.5-Coder-7B-Instruct"
-#MODEL_SQL_MERGE="cycloneboy/CscSQL-Merge-Qwen2.5-Coder-3B-Instruct"
+#MODEL_SQL_MERGE="cycloneboy/CscSQL-Merge-Qwen2.5-Coder-7B-Instruct"
+MODEL_SQL_MERGE="cycloneboy/CscSQL-Merge-Qwen2.5-Coder-3B-Instruct"
 
 # 7B SQL generation model
-MODEL_SQL_GENERATE="cycloneboy/CscSQL-Grpo-Qwen2.5-Coder-7B-Instruct"
-#MODEL_SQL_GENERATE="cycloneboy/CscSQL-Grpo-Qwen2.5-Coder-3B-Instruct"
+#MODEL_SQL_GENERATE="cycloneboy/CscSQL-Grpo-Qwen2.5-Coder-7B-Instruct"
+MODEL_SQL_GENERATE="cycloneboy/CscSQL-Grpo-XiYanSQL-QwenCoder-3B-2502"
 # The number of SQL generated. For a 7B model, the default value is 64; for a 32B model, the default value is 64
 N_SQL_GENERATE=64
 

@@ -305,7 +305,7 @@ if __name__ == '__main__':
         max_model_len=max_model_len,
         seed=opt.seed,
         gpu_memory_utilization=opt.gpu_memory_utilization,
-        swap_space=42,
+        swap_space=8,
         enforce_eager=True,
         enable_lora=enable_lora,
         max_lora_rank=opt.max_lora_rank,

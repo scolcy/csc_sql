@@ -90,6 +90,7 @@ def build_content_index(db_file_path: str, index_path: str):
     '''
     cursor = get_cursor_from_path(db_file_path)
     results = execute_sql(cursor, "SELECT name FROM sqlite_master WHERE type='table';")
+    # get all table names
     table_names = [result[0] for result in results]
 
     all_column_contents = []
@@ -522,7 +523,7 @@ def deduplicate_dicts(dict_list):
 
     return unique_dicts
 
-
+# 构造输入输出对
 def prepare_input_output_pairs(data, ek_key, db_id2relevant_hits, sampled_db_values_dict, db_info, source, output_key,
                                mode):
     if data[ek_key].strip() == "":
@@ -539,12 +540,13 @@ def prepare_input_output_pairs(data, ek_key, db_id2relevant_hits, sampled_db_val
             hits.extend(db_id2relevant_hits[data["db_id"]][query])
         hits = deduplicate_dicts(hits)
         relavant_db_values_dict = retrieve_question_related_db_values(hits, question)
-
-    db_details = obtain_db_details(
-        db_info, source, sampled_db_values_dict, relavant_db_values_dict,
-        data[output_key], mode, question
-    )
-
+    # 构造数据库结构
+    # db_details = obtain_db_details(
+    #     db_info, source, sampled_db_values_dict, relavant_db_values_dict,
+    #     data[output_key], mode, question
+    # )
+    # 在 prepare_input_output_pairs 函数中使用
+    db_details = load_mschema(data["db_id"], "/home/scolcy/work/bird/dev_20240627/dev_databases")
     input_seq = input_prompt_template.format(
         db_engine="SQLite",
         db_details=db_details,
@@ -556,6 +558,20 @@ def prepare_input_output_pairs(data, ek_key, db_id2relevant_hits, sampled_db_val
         "output_seq": data.get(output_key, "")
     }
     return item
+#
+# def load_mschema(db_id, db_details_path):
+#     """
+#     从文件中加载数据库描述信息
+#     """
+#     db_details_file = os.path.join(db_details_path, f"{db_id}.mschema")
+#     if os.path.exists(db_details_file):
+#         with open(db_details_file, 'r', encoding='utf-8') as f:
+#             return f.read()
+#     else:
+#         # 如果文件不存在，可以回退到原来的函数或者返回默认值
+#         return "-- Database description not available"
+#
+
 
 
 def process_data(args):
