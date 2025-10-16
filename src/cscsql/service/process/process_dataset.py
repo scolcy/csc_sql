@@ -541,12 +541,12 @@ def prepare_input_output_pairs(data, ek_key, db_id2relevant_hits, sampled_db_val
         hits = deduplicate_dicts(hits)
         relavant_db_values_dict = retrieve_question_related_db_values(hits, question)
     # 构造数据库结构
-    # db_details = obtain_db_details(
-    #     db_info, source, sampled_db_values_dict, relavant_db_values_dict,
-    #     data[output_key], mode, question
-    # )
-    # 在 prepare_input_output_pairs 函数中使用
-    db_details = load_mschema(data["db_id"], "/home/scolcy/work/bird/dev_20240627/dev_databases")
+    db_details = obtain_db_details(
+        db_info, source, sampled_db_values_dict, relavant_db_values_dict,
+        data[output_key], mode, question
+    )
+
+    # db_details = load_mschema(data["db_id"], "/home/scolcy/work/bird/dev_20240627/dev_databases")
     input_seq = input_prompt_template.format(
         db_engine="SQLite",
         db_details=db_details,
