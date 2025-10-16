@@ -541,12 +541,12 @@ def prepare_input_output_pairs(data, ek_key, db_id2relevant_hits, sampled_db_val
         hits = deduplicate_dicts(hits)
         relavant_db_values_dict = retrieve_question_related_db_values(hits, question)
     # 构造数据库结构
-    db_details = obtain_db_details(
-        db_info, source, sampled_db_values_dict, relavant_db_values_dict,
-        data[output_key], mode, question
-    )
+    # db_details = obtain_db_details(
+    #     db_info, source, sampled_db_values_dict, relavant_db_values_dict,
+    #     data[output_key], mode, question
+    # )
 
-    # db_details = load_mschema(data["db_id"], "/home/scolcy/work/bird/dev_20240627/dev_databases")
+    db_details = load_mschema(data["db_id"], "/home/scolcy/work/bird/dev_20240627/dev_databases")
     input_seq = input_prompt_template.format(
         db_engine="SQLite",
         db_details=db_details,
@@ -558,19 +558,19 @@ def prepare_input_output_pairs(data, ek_key, db_id2relevant_hits, sampled_db_val
         "output_seq": data.get(output_key, "")
     }
     return item
-#
-# def load_mschema(db_id, db_details_path):
-#     """
-#     从文件中加载数据库描述信息
-#     """
-#     db_details_file = os.path.join(db_details_path, f"{db_id}.mschema")
-#     if os.path.exists(db_details_file):
-#         with open(db_details_file, 'r', encoding='utf-8') as f:
-#             return f.read()
-#     else:
-#         # 如果文件不存在，可以回退到原来的函数或者返回默认值
-#         return "-- Database description not available"
-#
+
+def load_mschema(db_id, db_details_path):
+    """
+    从文件中加载数据库描述信息
+    """
+    db_details_file = os.path.join(db_details_path, f"{db_id}/{db_id}.sqlite.mschema")
+    if os.path.exists(db_details_file):
+        with open(db_details_file, 'r', encoding='utf-8') as f:
+            return f.read()
+    else:
+        # 如果文件不存在，可以回退到原来的函数或者返回默认值
+        return "None"
+
 
 
 
@@ -596,11 +596,11 @@ if __name__ == "__main__":
     random.seed(42)
     assert opt.mode in ["train", "dev", "test"]
 
-    build_index_for_dataset(
-        dataset_name=opt.source,
-        db_path=opt.db_path,
-        save_index_path=opt.db_content_index_path
-    )
+    # build_index_for_dataset(
+    #     dataset_name=opt.source,
+    #     db_path=opt.db_path,
+    #     save_index_path=opt.db_content_index_path
+    # )
 
     dataset = load_json_file(opt.input_data_file)
 
