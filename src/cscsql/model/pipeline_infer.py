@@ -81,6 +81,8 @@ def run_eval_pipeline(opt, eval_mode="greedy_search", eval_step=None):
 
             opt.link_tables = table_link_file
         sql_generate_file = run_eval_by_cmd(opt=opt, eval_mode=eval_mode, eval_step="sql_generate")
+        # sql_generate_file = "outputs/20251016_215443/sampling_think_sql_generate.json"
+         # sql_generate_file = "outputs/20251016_222543/sampling_think_sql_generate.json"
         # result_file = sql_generate_file
         opt.selection_vote = sql_generate_file
         result_file = run_eval_by_cmd(opt=opt, eval_mode=eval_mode, eval_step="sql_merge")
@@ -128,6 +130,9 @@ if __name__ == "__main__":
     parser.add_argument("--gen_sqls", type=str, default="none", help="predict generate sql file")
     parser.add_argument("--selection_vote", type=str, default="none", help="selection_vote")
     parser.add_argument("--prompt_mode", type=str, default="merge", help="prompt_mode")
+
+    import os
+    os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
     opt = parser.parse_args()
     if opt.run_time is None:

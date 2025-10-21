@@ -546,7 +546,7 @@ Candidate B execute result:
         db_file = Path(db_root).joinpath(db_id).joinpath(f"{db_id}.sqlite").resolve()
         db_path = str(db_file)
         return db_path
-
+    # 获取所有数据库的完整模式和样本数据
     @staticmethod
     def get_all_db_full_schema_and_sample(db_root: str, sample_limit=3):
         all_db_ids = FileUtils.list_dir(db_root)

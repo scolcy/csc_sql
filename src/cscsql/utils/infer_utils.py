@@ -6,6 +6,7 @@ import sqlite3
 from collections import defaultdict
 from copy import deepcopy
 from typing import Union, List, Dict
+import time
 
 from func_timeout import func_timeout, FunctionTimedOut
 from tqdm import tqdm
@@ -24,7 +25,7 @@ def build_stop_token_ids(pretrained_model_name_or_path: str):
             or "XiYanSQL" in pretrained_model_name_or_path \
             or "Qwen" in pretrained_model_name_or_path \
             or "Qwen2___5" in pretrained_model_name_or_path:
-        stop_token_ids = [151645]  # 151645 is the token id of <|im_end|> (end of turn token in Qwen2.5)
+        stop_token_ids = [151645]  # 151645 is the token id of  (end of turn token in Qwen2.5)
     elif "deepseek-coder-" in pretrained_model_name_or_path:
         stop_token_ids = [32021]
     elif "DeepSeek-Coder-V2" in pretrained_model_name_or_path:
@@ -85,10 +86,15 @@ def build_selection_vote_execute_sql_result(selection_vote: Union[str, int],
 
 
 def execute_sql(data_idx, db_file, sql):
-    conn = sqlite3.connect(db_file)
+    # 优化数据库连接参数，减少锁竞争
+    conn = sqlite3.connect(db_file, check_same_thread=False, timeout=30.0)
+    conn.execute("PRAGMA read_uncommitted = true;")  # 允许读取未提交的数据
+    conn.execute("PRAGMA cache_size = 10000;")  # 增加缓存大小
+    conn.execute("PRAGMA temp_store = MEMORY;")  # 使用内存存储临时数据
+    
     cursor = conn.cursor()
     try:
-        conn.execute("BEGIN TRANSACTION;")
+        conn.execute("BEGIN IMMEDIATE;")  # 使用 IMMEDIATE 模式减少锁等待时间
         cursor.execute(sql)
         execution_res = cursor.fetchall()
         execution_res = frozenset(execution_res)  # make set hashable
@@ -96,7 +102,7 @@ def execute_sql(data_idx, db_file, sql):
         conn.close()
         return data_idx, db_file, sql, execution_res, 1
 
-    except:
+    except Exception as e:
         conn.rollback()
         conn.close()
         return data_idx, db_file, sql, None, 0
@@ -143,13 +149,62 @@ def execute_callback_execute_sqls_gold(result):
     )
 
 
-def execute_sqls_parallel(db_files, sqls, num_cpus=1, timeout=1):
-    pool = mp.Pool(processes=num_cpus)
-    for data_idx, db_file, sql in zip(list(range(len(sqls))), db_files, sqls):
-        pool.apply_async(execute_sql_wrapper, args=(data_idx, db_file, sql, timeout),
+def _execute_sqls_batch(db_files, sqls, base_idx, num_cpus=1, timeout=1):
+    # 限制最大并发数，避免磁盘IO过高
+    max_processes = min(num_cpus, 4)  # 最大并发数限制为4
+    print(f"创建进程池，使用{max_processes}个CPU核心处理{len(sqls)}条SQL，起始索引: {base_idx}")
+    pool = mp.Pool(processes=max_processes)
+    results = []
+    for idx, db_file, sql in zip(list(range(len(sqls))), db_files, sqls):
+        data_idx = base_idx + idx  # 使用全局索引而不是局部索引
+        result = pool.apply_async(execute_sql_wrapper, args=(data_idx, db_file, sql, timeout),
                          callback=execute_callback_execute_sqls)
+        results.append(result)
+    
+    print(f"提交了{len(results)}个异步任务，开始等待任务完成...")
+    # 等待所有任务完成，并检查是否有异常
+    for i, result in enumerate(results):
+        try:
+            result.get(timeout=timeout + 5)  # 等待结果，超时时间比SQL执行超时稍长
+        except Exception as e:
+            print(f"警告：第{i}个SQL任务执行异常: {e}")
+    
     pool.close()
     pool.join()
+    print(f"进程池任务完成，处理了{len(sqls)}条SQL")
+
+
+def execute_sqls_parallel(db_files, sqls, num_cpus=1, timeout=1):
+    # 如果SQL数量超过条，则分批执行以减轻CPU压力
+    max_batch_size = 500
+    total_batches = (len(sqls) + max_batch_size - 1) // max_batch_size  # 计算总批次数
+    if len(sqls) <= max_batch_size:
+        # SQL数量不超过15000条，直接执行
+        print(f"SQL数量({len(sqls)})不超过{max_batch_size}条，直接执行...")
+        _execute_sqls_batch(db_files, sqls, 0, min(num_cpus, 4), timeout)  # 从索引0开始，限制并发数
+    else:
+        # SQL数量超过条，分批执行
+        print(f"SQL数量({len(sqls)})超过{max_batch_size}条，将分批执行，共{total_batches}批...")
+        batch_count = 0
+        for i in range(0, len(sqls), max_batch_size):
+            batch_db_files = db_files[i:i + max_batch_size]
+            batch_sqls = sqls[i:i + max_batch_size]
+            current_batch = i//max_batch_size + 1
+            base_idx = i  # 当前批次的起始索引
+            print(f"执行第{current_batch}批次，包含{len(batch_sqls)}条SQL，起始索引: {base_idx}")
+            try:
+                _execute_sqls_batch(batch_db_files, batch_sqls, base_idx, min(num_cpus, 4), timeout)
+                print(f"第{current_batch}批次执行完成")
+                batch_count += 1
+                print(f"进度: {batch_count}/{total_batches} 批次完成")
+                # 添加短暂延迟，减轻系统压力
+                if current_batch < total_batches:
+                    print("短暂休眠以减轻系统压力...")
+                    time.sleep(2)  # 暂停2秒
+            except Exception as e:
+                print(f"执行第{current_batch}批次时发生异常: {e}")
+                raise e  # 重新抛出异常，让调用者知道
+        print(f"所有批次执行完成，共执行了{batch_count}个批次")
 
 
 def execute_gold_sqls_parallel(db_files, sqls, num_cpus=1, timeout=1):
@@ -164,14 +219,16 @@ def execute_gold_sqls_parallel(db_files, sqls, num_cpus=1, timeout=1):
 def major_voting2(db_files, pred_sqls, sampling_num,
                   ground_truth_sqls, gold_db_files,
                   return_random_one_when_all_errors=True,
-                  num_cpus=30, timeout=30):
+                  num_cpus=10, timeout=30):
     global execution_results
     global gold_execution_results
     mj_pred_correctness_list = []
     mj_top2_pred_correctness_list = []
     execution_results = []
     # execute all sampled SQL queries to obtain their execution results
+    print(f"开始执行SQL，总共{len(pred_sqls)}条SQL语句")
     execute_sqls_parallel(db_files, pred_sqls, num_cpus=num_cpus, timeout=timeout)
+    print("sql exe over")
     execution_results = sorted(execution_results, key=lambda x: x['data_idx'])
     print("len(execution_results):", len(execution_results))
 
@@ -350,7 +407,7 @@ def calc_nl2sql_result(evaluation_scores: List, gold: List[Dict]):
 
 
 def run_eval_major_vote(gold_file, pred_file, db_path,
-                        num_cpus=30, timeout=30, pred_sql_key="pred_sqls",
+                        num_cpus=8, timeout=30, pred_sql_key="pred_sqls",
                         config: Dict = None):
     pred_results = FileUtils.load_json(pred_file)
 

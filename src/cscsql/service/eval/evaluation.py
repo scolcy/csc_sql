@@ -6,6 +6,8 @@ import sqlite3
 import multiprocessing as mp
 from func_timeout import func_timeout, FunctionTimedOut
 
+from cscsql.utils.infer_utils import execute_gold_sqls_parallel
+
 SPECIAL_SEPERATOR = "\t----- SQL-EVAL -----\t"
 SPECIAL_SEPERATOR_BIRD = "\t----- bird -----\t"
 
@@ -171,6 +173,7 @@ if __name__ == '__main__':
 
     query_pairs = list(zip(pred_queries, gt_queries))
     run_sqls_parallel(query_pairs, db_places=db_paths, num_cpus=args.num_cpus, meta_time_out=args.meta_time_out)
+    # execute_gold_sqls_parallel(gold_db_files, ground_truth_sqls, num_cpus=args.num_cpus, timeout=args.meta_time_out)
     exec_result = sort_results(exec_result)
 
     print('start calculate')

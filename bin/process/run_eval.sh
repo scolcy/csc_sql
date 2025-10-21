@@ -33,7 +33,7 @@ DATASET_PATH="${DATASET_BASE_DIR}/bird/dev_20240627/dev_databases"
 ######################################################################################
 
 # Predicted SQL file path
-PREDICTED_SQL_PATH="outputs/20250525_120000/sampling_think_sql_merge_pred_major_voting_sqls.sql"
+PREDICTED_SQL_PATH="outputs/20251017_142923/sampling_think_sql_merge_pred_major_voting_sqls.sql"
 
 python3 src/cscsql/service/eval/evaluation.py \
 --data_mode $DATASET_MODE \
