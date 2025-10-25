@@ -187,24 +187,24 @@ def make_prefix(dp: Dict, template_type='think',
         question_raw = question_raw.replace(omni_output_format, '')
 
         prefix = f"""You first thinks about the reasoning process in the mind and then provides the user with the answer.\n\
-{question_raw}
-
-Output Format:
-Return the final SQLite SQL query that starts with keyword `SELECT` in <answer> </answer> tags, \
-for example <answer>SELECT AVG(rating_score) FROM movies</answer>. \
-Let me solve this step by step."""
+            {question_raw}
+            
+            Output Format:
+            Return the final SQLite SQL query that starts with keyword `SELECT` in <answer> </answer> tags, \
+            for example <answer>SELECT AVG(rating_score) FROM movies</answer>. \
+            Let me solve this step by step."""
     elif template_type == 'think':
         omni_output_format = """Output Format:\nIn your answer, please enclose the generated SQL query in a code block:\n```sql\n-- Your SQL query\n```\n\nTake a deep breath and think step by step to find the correct SQL query.\n"""
         question_raw = question_raw.replace(omni_output_format, '')
 
         prefix = f"""You first thinks about the reasoning process in the mind and then provides the user with the answer.\n\
-{question_raw}
-
-Output Format:
-Show your work in <think> </think> tags. And return the final SQLite SQL query that starts with keyword `SELECT` in <answer> </answer> tags, \
-for example <answer>SELECT AVG(rating_score) FROM movies</answer>. \
-
-Let me solve this step by step."""
+            {question_raw}
+            
+            Output Format:
+            Show your work in <think> </think> tags. And return the final SQLite SQL query that starts with keyword `SELECT` in <answer> </answer> tags, \
+            for example <answer>SELECT AVG(rating_score) FROM movies</answer>. \
+            
+            Let me solve this step by step."""
     else:
         prefix = dp[instruction_key]
         if other_input:

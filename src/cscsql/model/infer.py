@@ -203,171 +203,183 @@ if __name__ == '__main__':
     parser.add_argument("--system_prompt", type=str, default="default", help="system_prompt")
 
     opt = parser.parse_args()
-    # print(opt)
-    # shuffle_ab = False if opt.shuffle_ab in ['0', 0] else True
-    # is_train = True if str(opt.db_path).find("train") > -1 else False
-    #
-    # max_model_len = 8192
-    # if is_train:
-    #     max_model_len = 12000
-    # max_output_len = 1024  # (max_input_len + max_output_len) must <= max_model_len
-    #
-    # db_full_schema_config, db_sample_config = CommonUtils.get_all_db_full_schema_and_sample(db_root=opt.db_path)
-    #
-    # # get few shot example
-    # few_shot_results = None
-    # if opt.few_shot_num > 0:
-    #     few_shot_results = CommonUtils.get_few_shot_list()
-    #
-    # predict_sql_results = build_execute_sql_result(opt.gen_sqls, db_path=opt.db_path)
-    # if opt.gen_sqls is not None and opt.gen_sqls not in ["none"] and predict_sql_results is None:
-    #     print(f"predict_sql_results is None, please check your gen_sqls file, file name: {opt.gen_sqls}")
-    #
-    # selection_vote_predict_sql_results, all_predict_results = build_selection_vote_execute_sql_result(
-    #     opt.selection_vote,
-    #     db_path=opt.db_path,
-    #     is_train=False,
-    #     prompt_mode=opt.prompt_mode)
-    #
-    # if opt.selection_vote is not None \
-    #         and opt.selection_vote not in ["none"] \
-    #         and selection_vote_predict_sql_results is None:
-    #     print("selection_vote_predict_sql_results is None, "
-    #           "please check your selection_vote file, file name: {opt.selection_vote}")
-    #
-    # parse_mode = 'sql'
-    # if selection_vote_predict_sql_results is not None and opt.prompt_mode == 'vote':
-    #     parse_mode = 'selection_vote'
-    # elif opt.prompt_mode == 'table':
-    #     parse_mode = 'table'
-    #
-    # raw_input_dataset = FileUtils.load_json(opt.input_file)
-    # raw_data = FileUtils.load_json(str(opt.db_path).replace("_databases", ".json"))
-    #
-    # link_table_results = CommonUtils.read_link_table(link_table_files=opt.link_tables,
-    #                                                  is_train=is_train)
-    #
-    # input_dataset = build_prompt(raw_input_dataset,
-    #                              prompt_name=opt.prompt_name,
-    #                              link_table_results=link_table_results,
-    #                              few_shot_results=few_shot_results,
-    #                              few_shot_num=opt.few_shot_num,
-    #                              predict_sql_results=predict_sql_results,
-    #                              selection_vote_predict_sql_results=selection_vote_predict_sql_results,
-    #                              shuffle_ab=shuffle_ab,
-    #                              is_train=is_train,
-    #                              prompt_mode=opt.prompt_mode,
-    #                              raw_data=raw_data,
-    #                              db_path=opt.db_path,
-    #                              db_full_schema_config=db_full_schema_config,
-    #                              max_model_len=max_model_len
-    #                              )
-    #
-    # enable_lora = False
-    # lora_request = None
-    # model_path = opt.pretrained_model_name_or_path
-    # lora_config_path = os.path.join(model_path, "adapter_config.json")
-    # if os.path.exists(lora_config_path):
-    #     enable_lora = True
-    #     lora_config = FileUtils.load_json(lora_config_path)
-    #     model_path = lora_config.get("base_model_name_or_path", model_path)
-    #     epoch = 1
-    #     try:
-    #         epoch = int(str(opt.pretrained_model_name_or_path).split("-")[-1])
-    #     except:
-    #         pass
-    #     lora_request = LoRARequest(f"sft_adapter_{epoch}", epoch, opt.pretrained_model_name_or_path)
-    #     print(f"use lora: r={lora_config['r']} lora_alpha={lora_config['lora_alpha']}")
-    #
-    # tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
-    # config = AutoConfig.from_pretrained(model_path, trust_remote_code=True)
-    # stop_token_ids = config.eos_token_id if hasattr(config, "eos_token_id") else None
-    # if isinstance(stop_token_ids, int):
-    #     stop_token_ids = [stop_token_ids]
-    #
-    # print("parse_mode:", parse_mode)
-    # print("max_model_len:", max_model_len)
-    # print("temperature:", opt.temperature)
-    # print("n:", opt.n)
-    # print("few_shot_num:", opt.few_shot_num)
-    # print("stop_token_ids:", stop_token_ids)
-    # sampling_params = SamplingParams(
-    #     temperature=opt.temperature,
-    #     max_tokens=max_output_len,
-    #     n=opt.n,
-    #     stop_token_ids=stop_token_ids
-    # )
-    #
-    # llm = LLM(
-    #     model=model_path,
-    #     dtype="bfloat16",
-    #     tensor_parallel_size=opt.tensor_parallel_size,
-    #     max_model_len=max_model_len,
-    #     seed=opt.seed,
-    #     gpu_memory_utilization=opt.gpu_memory_utilization,
-    #     swap_space=8,
-    #     enforce_eager=True,
-    #     enable_lora=enable_lora,
-    #     max_lora_rank=opt.max_lora_rank,
-    #     disable_custom_all_reduce=True,
-    #     trust_remote_code=True
-    # )
-    #
-    # system_prompt = "You are a helpful AI Assistant that provides well-reasoned and detailed responses. You first think about the reasoning process as an internal monologue and then provide the user with the answer. Respond in the following format: <think>\n...\n</think>\n<answer>\n...\n</answer>"
-    #
-    # chat_prompts = []
-    # for data in input_dataset:
-    #     messages = []
-    #     if opt.system_prompt == "none":
-    #         system_prompt = ""
-    #     elif opt.system_prompt == "default":
-    #         system_prompt = system_prompt
-    #     else:
-    #         system_prompt = opt.system_prompt
-    #
-    #     if len(system_prompt) > 10:
-    #         messages.append({"role": "system", "content": system_prompt})
-    #
-    #     messages.append({"role": "user", "content": data["input_seq"]})
-    #     res = tokenizer.apply_chat_template(messages,
-    #                                         add_generation_prompt=True,
-    #                                         tokenize=False)
-    #
-    #     chat_prompts.append(res)
-    #
-    # print(f"prompt[0]:")
-    # print(chat_prompts[0])
-    #
-    # outputs = llm.generate(chat_prompts,
-    #                        sampling_params=sampling_params,
-    #                        lora_request=lora_request, )
-    #
-    # results = []
-    # for data, output in zip(input_dataset, outputs):
-    #     responses = [o.text for o in output.outputs]
-    #     sqls = [parse_response(response, mode=parse_mode) for response in responses]
-    #
-    #     data["responses"] = responses
-    #     data["pred_sqls"] = sqls
-    #     results.append(data)
-    #
-    # print(f"responses[0]:")
-    # print(results[0]["responses"][0])
-    # print(f"pred_sqls[0]:")
-    # print(results[0]["pred_sqls"][0])
-    #
-    # if all_predict_results and len(all_predict_results) == len(raw_data):
-    #     infer_ids = [item['id'] for item in results]
-    #     for index, item in enumerate(all_predict_results):
-    #         if item['id'] not in infer_ids:
-    #             new_item = deepcopy(item)
-    #             new_item['mode'] = "major_vote"
-    #             new_item['pred_sqls'] = [item['sql'] for _ in range(opt.n)]
-    #             new_item['responses'] = new_item['pred_sqls']
-    #             results.append(new_item)
-    #
-    # results.sort(key=lambda x: int(x['id']))
-    # FileUtils.dump_json(opt.output_file, results)
+    print(opt)
+    shuffle_ab = False if opt.shuffle_ab in ['0', 0] else True
+    is_train = True if str(opt.db_path).find("train") > -1 else False
+
+    max_model_len = 8192
+    if is_train:
+        max_model_len = 12000
+    max_output_len = 1024  # (max_input_len + max_output_len) must <= max_model_len
+
+    db_full_schema_config, db_sample_config = CommonUtils.get_all_db_full_schema_and_sample(db_root=opt.db_path)
+
+    # get few shot example
+    few_shot_results = None
+    if opt.few_shot_num > 0:
+        few_shot_results = CommonUtils.get_few_shot_list()
+
+    predict_sql_results = build_execute_sql_result(opt.gen_sqls, db_path=opt.db_path)
+    if opt.gen_sqls is not None and opt.gen_sqls not in ["none"] and predict_sql_results is None:
+        print(f"predict_sql_results is None, please check your gen_sqls file, file name: {opt.gen_sqls}")
+
+    selection_vote_predict_sql_results, all_predict_results = build_selection_vote_execute_sql_result(
+        opt.selection_vote,
+        db_path=opt.db_path,
+        is_train=False,
+        prompt_mode=opt.prompt_mode)
+
+    if opt.selection_vote is not None \
+            and opt.selection_vote not in ["none"] \
+            and selection_vote_predict_sql_results is None:
+        print("selection_vote_predict_sql_results is None, "
+              "please check your selection_vote file, file name: {opt.selection_vote}")
+
+    parse_mode = 'sql'
+    if selection_vote_predict_sql_results is not None and opt.prompt_mode == 'vote':
+        parse_mode = 'selection_vote'
+    elif opt.prompt_mode == 'table':
+        parse_mode = 'table'
+
+    raw_input_dataset = FileUtils.load_json(opt.input_file)
+    raw_data = FileUtils.load_json(str(opt.db_path).replace("_databases", ".json"))
+
+    link_table_results = CommonUtils.read_link_table(link_table_files=opt.link_tables,
+                                                     is_train=is_train)
+
+    input_dataset = build_prompt(raw_input_dataset,
+                                 prompt_name=opt.prompt_name,
+                                 link_table_results=link_table_results,
+                                 few_shot_results=few_shot_results,
+                                 few_shot_num=opt.few_shot_num,
+                                 predict_sql_results=predict_sql_results,
+                                 selection_vote_predict_sql_results=selection_vote_predict_sql_results,
+                                 shuffle_ab=shuffle_ab,
+                                 is_train=is_train,
+                                 prompt_mode=opt.prompt_mode,
+                                 raw_data=raw_data,
+                                 db_path=opt.db_path,
+                                 db_full_schema_config=db_full_schema_config,
+                                 max_model_len=max_model_len
+                                 )
+
+    enable_lora = False
+    lora_request = None
+    model_path = opt.pretrained_model_name_or_path
+    lora_config_path = os.path.join(model_path, "adapter_config.json")
+    if os.path.exists(lora_config_path):
+        enable_lora = True
+        lora_config = FileUtils.load_json(lora_config_path)
+        model_path = lora_config.get("base_model_name_or_path", model_path)
+        epoch = 1
+        try:
+            epoch = int(str(opt.pretrained_model_name_or_path).split("-")[-1])
+        except:
+            pass
+        lora_request = LoRARequest(f"sft_adapter_{epoch}", epoch, opt.pretrained_model_name_or_path)
+        print(f"use lora: r={lora_config['r']} lora_alpha={lora_config['lora_alpha']}")
+
+    tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
+    config = AutoConfig.from_pretrained(model_path, trust_remote_code=True)
+    stop_token_ids = config.eos_token_id if hasattr(config, "eos_token_id") else None
+    if isinstance(stop_token_ids, int):
+        stop_token_ids = [stop_token_ids]
+
+    print("parse_mode:", parse_mode)
+    print("max_model_len:", max_model_len)
+    print("temperature:", opt.temperature)
+    print("n:", opt.n)
+    print("few_shot_num:", opt.few_shot_num)
+    print("stop_token_ids:", stop_token_ids)
+    sampling_params = SamplingParams(
+        temperature=opt.temperature,
+        max_tokens=max_output_len,
+        n=opt.n,
+        stop_token_ids=stop_token_ids,
+        logprobs=1  # 启用logprobs，数值表示返回top-k个token的logprobs
+    )
+
+    llm = LLM(
+        model=model_path,
+        dtype="bfloat16",
+        tensor_parallel_size=opt.tensor_parallel_size,
+        max_model_len=max_model_len,
+        seed=opt.seed,
+        gpu_memory_utilization=opt.gpu_memory_utilization,
+        swap_space=8,
+        enforce_eager=True,
+        enable_lora=enable_lora,
+        max_lora_rank=opt.max_lora_rank,
+        disable_custom_all_reduce=True,
+        trust_remote_code=True
+    )
+
+    system_prompt = "You are a helpful AI Assistant that provides well-reasoned and detailed responses. You first think about the reasoning process as an internal monologue and then provide the user with the answer. Respond in the following format: <think>\n...\n</think>\n<answer>\n...\n</answer>"
+
+    chat_prompts = []
+    for data in input_dataset:
+        messages = []
+        if opt.system_prompt == "none":
+            system_prompt = ""
+        elif opt.system_prompt == "default":
+            system_prompt = system_prompt
+        else:
+            system_prompt = opt.system_prompt
+
+        if len(system_prompt) > 10:
+            messages.append({"role": "system", "content": system_prompt})
+
+        messages.append({"role": "user", "content": data["input_seq"]})
+        res = tokenizer.apply_chat_template(messages,
+                                            add_generation_prompt=True,
+                                            tokenize=False)
+
+        chat_prompts.append(res)
+
+    print(f"prompt[0]:")
+    print(chat_prompts[0])
+
+    outputs = llm.generate(chat_prompts,
+                           sampling_params=sampling_params,
+                           lora_request=lora_request, )
+
+    results = []
+    for data, output in zip(input_dataset, outputs):
+        responses = [o.text for o in output.outputs]
+        sqls = [parse_response(response, mode=parse_mode) for response in responses]
+        # cumulative_logprobs = [o.cumulative_logprob for o in output.outputs]
+
+        # 计算每个输出的平均logprob
+        avg_logprobs = []
+        for o in output.outputs:
+            # 获取生成的token数量
+            token_count = len(o.token_ids)
+            # 计算平均logprob
+            avg_logprob = o.cumulative_logprob / token_count if token_count > 0 else 0
+            avg_logprobs.append(avg_logprob)
+
+        data["responses"] = responses
+        data["pred_sqls"] = sqls
+        data["avg_logprobs"] = avg_logprobs
+        results.append(data)
+
+    print(f"responses[0]:")
+    print(results[0]["responses"][0])
+    print(f"pred_sqls[0]:")
+    print(results[0]["pred_sqls"][0])
+
+    if all_predict_results and len(all_predict_results) == len(raw_data):
+        infer_ids = [item['id'] for item in results]
+        for index, item in enumerate(all_predict_results):
+            if item['id'] not in infer_ids:
+                new_item = deepcopy(item)
+                new_item['mode'] = "major_vote"
+                new_item['pred_sqls'] = [item['sql'] for _ in range(opt.n)]
+                new_item['responses'] = new_item['pred_sqls']
+                results.append(new_item)
+
+    results.sort(key=lambda x: int(x['id']))
+    FileUtils.dump_json(opt.output_file, results)
     parse_mode = 'sql'
     if parse_mode == "sql":
         run_eval_major_vote(gold_file=opt.gold_file,
