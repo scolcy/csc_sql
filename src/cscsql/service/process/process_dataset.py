@@ -207,7 +207,7 @@ def format_identifier(identifier):
 
 def sample_table_values(db_file_dir, table_names, limit_num):
     db_values_dict = dict()
-
+    print(db_file_dir)
     conn = sqlite3.connect(db_file_dir)
     cursor = conn.cursor()
 
@@ -374,7 +374,7 @@ def prepare_schema_filter_data(question, db_info):
 
 
 def obtain_db_details(db_info, data_source, sampled_db_values_dict, relavant_db_values_dict, output_seq, mode,
-                      question):
+                      question, table_names):
     db_details = []
     assert len(db_info["column_names_original"]) == len(db_info["column_names"]) == len(db_info["column_types"])
 
@@ -412,9 +412,11 @@ def obtain_db_details(db_info, data_source, sampled_db_values_dict, relavant_db_
     else:
         # put all tables and columns in the prompt
         used_column_idx_list = list(range(len(db_info["column_names_original"])))
-
+    # 筛选该问题需要的表
     # print(used_column_idx_list)
-    for outer_table_idx, table_name in enumerate(db_info["table_names_original"]):
+    # table_names = []
+    table_names = db_info["table_names_original"] if table_names == [] else table_names
+    for outer_table_idx, table_name in enumerate(table_names):
         column_info_list = []
         pk_columns = []
         fk_info = []
@@ -424,59 +426,64 @@ def obtain_db_details(db_info, data_source, sampled_db_values_dict, relavant_db_
         for column_idx, ((inner_table_idx, column_name), (_, column_comment), column_type) in enumerate(zip(
                 db_info["column_names_original"], db_info["column_names"], db_info["column_types"]
         )):
-            if inner_table_idx == outer_table_idx:
-                if column_idx not in used_column_idx_list:
-                    continue
+            # 修复：通过表名匹配而不是索引匹配
+            inner_table_name = db_info["table_names_original"][inner_table_idx]
+            if inner_table_name.lower() != table_name.lower():
+                continue
+            
+            # 修复：检查列是否在使用的列列表中
+            if column_idx not in used_column_idx_list:
+                continue
 
-                column_values = []
-                if f"{table_name}.{column_name}".lower() in relavant_db_values_dict:
-                    column_values.extend(relavant_db_values_dict[f"{table_name}.{column_name}".lower()])
-                if f"{table_name}.{column_name}".lower() in sampled_db_values_dict:
-                    column_values.extend(sampled_db_values_dict[f"{table_name}.{column_name}".lower()])
-                column_values = list(dict.fromkeys(column_values))  # dedup (reserve order)
-                column_values = column_values[:6]
+            column_values = []
+            if f"{table_name}.{column_name}".lower() in relavant_db_values_dict:
+                column_values.extend(relavant_db_values_dict[f"{table_name}.{column_name}".lower()])
+            if f"{table_name}.{column_name}".lower() in sampled_db_values_dict:
+                column_values.extend(sampled_db_values_dict[f"{table_name}.{column_name}".lower()])
+            column_values = list(dict.fromkeys(column_values))  # dedup (reserve order)
+            column_values = column_values[:6]
 
-                if data_source == "synthetic":
-                    if random.random() < column_comment_prob:
-                        column_info = f'    {format_identifier(column_name)} {column_type}, -- {column_comment}'
-                        if len(column_values) > 0:
-                            column_info += f", example: {column_values}"
-                    else:  # simulate some columns do not have comment
-                        column_info = f'    {format_identifier(column_name)} {column_type},'
-                        if len(column_values) > 0:
-                            column_info += f" -- example: {column_values}"
+            if data_source == "synthetic":
+                if random.random() < column_comment_prob:
+                    column_info = f'    {format_identifier(column_name)} {column_type}, -- {column_comment}'
+                    if len(column_values) > 0:
+                        column_info += f", example: {column_values}"
+                else:  # simulate some columns do not have comment
+                    column_info = f'    {format_identifier(column_name)} {column_type},'
+                    if len(column_values) > 0:
+                        column_info += f" -- example: {column_values}"
+            else:
+                if column_name.lower() in [column_comment.lower(), column_comment.lower().replace(" ", "_"),
+                                           column_comment.lower().replace(" ", "")] \
+                        or column_comment.strip() == "":
+                    column_info = f'    {format_identifier(column_name)} {column_type},'
+                    if len(column_values) > 0:
+                        column_info += f" -- example: {column_values}"
                 else:
-                    if column_name.lower() in [column_comment.lower(), column_comment.lower().replace(" ", "_"),
-                                               column_comment.lower().replace(" ", "")] \
-                            or column_comment.strip() == "":
-                        column_info = f'    {format_identifier(column_name)} {column_type},'
-                        if len(column_values) > 0:
-                            column_info += f" -- example: {column_values}"
-                    else:
-                        column_info = f'    {format_identifier(column_name)} {column_type}, -- {column_comment}'
-                        if len(column_values) > 0:
-                            column_info += f", example: {column_values}"
+                    column_info = f'    {format_identifier(column_name)} {column_type}, -- {column_comment}'
+                    if len(column_values) > 0:
+                        column_info += f", example: {column_values}"
 
-                column_info_list.append(column_info)
+            column_info_list.append(column_info)
 
-                for primary_keys_idx in db_info["primary_keys"]:
-                    if isinstance(primary_keys_idx, int):
-                        if column_idx == primary_keys_idx:
-                            pk_columns.append(column_name)  # f'    PRIMARY KEY ("{ }")'
-                    elif isinstance(primary_keys_idx, list):
-                        if column_idx in primary_keys_idx:
-                            pk_columns.append(column_name)
+            for primary_keys_idx in db_info["primary_keys"]:
+                if isinstance(primary_keys_idx, int):
+                    if column_idx == primary_keys_idx:
+                        pk_columns.append(column_name)  # f'    PRIMARY KEY ("{ }")'
+                elif isinstance(primary_keys_idx, list):
+                    if column_idx in primary_keys_idx:
+                        pk_columns.append(column_name)
 
-                for (source_column_idx, target_column_idx) in db_info["foreign_keys"]:
-                    if column_idx == source_column_idx:
-                        source_table_idx = db_info["column_names_original"][source_column_idx][0]
-                        source_table_name = db_info["table_names_original"][source_table_idx]
-                        source_column_name = db_info["column_names_original"][source_column_idx][1]
-                        target_table_idx = db_info["column_names_original"][target_column_idx][0]
-                        target_table_name = db_info["table_names_original"][target_table_idx]
-                        target_column_name = db_info["column_names_original"][target_column_idx][1]
-                        fk_info.append(
-                            f'    CONSTRAINT fk_{source_table_name.lower().replace(" ", "_")}_{source_column_name.lower().replace(" ", "_")} FOREIGN KEY ({format_identifier(source_column_name)}) REFERENCES {format_identifier(target_table_name)} ({format_identifier(target_column_name)}),')
+            for (source_column_idx, target_column_idx) in db_info["foreign_keys"]:
+                if column_idx == source_column_idx:
+                    source_table_idx = db_info["column_names_original"][source_column_idx][0]
+                    source_table_name = db_info["table_names_original"][source_table_idx]
+                    source_column_name = db_info["column_names_original"][source_column_idx][1]
+                    target_table_idx = db_info["column_names_original"][target_column_idx][0]
+                    target_table_name = db_info["table_names_original"][target_table_idx]
+                    target_column_name = db_info["column_names_original"][target_column_idx][1]
+                    fk_info.append(
+                        f'    CONSTRAINT fk_{source_table_name.lower().replace(" ", "_")}_{source_column_name.lower().replace(" ", "_")} FOREIGN KEY ({format_identifier(source_column_name)}) REFERENCES {format_identifier(target_table_name)} ({format_identifier(target_column_name)}),')
 
         if len(column_info_list) > 0:
             pk_columns = list(OrderedDict.fromkeys(pk_columns))
@@ -502,11 +509,11 @@ def obtain_db_details(db_info, data_source, sampled_db_values_dict, relavant_db_
     db_details = "\n\n".join(db_details)
 
     # double check
-    for column_idx, (_, column_name) in enumerate(db_info["column_names_original"]):
-        if column_name == "*":
-            continue
-        if column_idx in used_column_idx_list:
-            assert column_name.lower() in db_details.lower()
+    # for column_idx, (_, column_name) in enumerate(db_info["column_names_original"]):
+    #     if column_name == "*":
+    #         continue
+    #     if column_idx in used_column_idx_list:
+    #         assert column_name.lower() in db_details.lower()
 
     return db_details
 
@@ -541,12 +548,12 @@ def prepare_input_output_pairs(data, ek_key, db_id2relevant_hits, sampled_db_val
         hits = deduplicate_dicts(hits)
         relavant_db_values_dict = retrieve_question_related_db_values(hits, question)
     # 构造数据库结构
-    # db_details = obtain_db_details(
-    #     db_info, source, sampled_db_values_dict, relavant_db_values_dict,
-    #     data[output_key], mode, question
-    # )
+    db_details = obtain_db_details(
+        db_info, source, sampled_db_values_dict, relavant_db_values_dict,
+        data[output_key], mode, question, data["table_names"]
+    )
 
-    db_details = load_mschema(data["db_id"], "/home/scolcy/work/bird/dev_20240627/dev_databases")
+    # db_details = load_mschema(data["db_id"], "/home/scolcy/work/bird/dev_20240627/dev_databases")
     input_seq = input_prompt_template.format(
         db_engine="SQLite",
         db_details=db_details,

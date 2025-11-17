@@ -24,7 +24,7 @@ def build_stop_token_ids(pretrained_model_name_or_path: str):
             or "XiYanSQL" in pretrained_model_name_or_path \
             or "Qwen" in pretrained_model_name_or_path \
             or "Qwen2___5" in pretrained_model_name_or_path:
-        stop_token_ids = [151645]  # 151645 is the token id of <|im_end|> (end of turn token in Qwen2.5)
+        stop_token_ids = [151645]  # 151645 is the token id of  (end of turn token in Qwen2.5)
     elif "deepseek-coder-" in pretrained_model_name_or_path:
         stop_token_ids = [32021]
     elif "DeepSeek-Coder-V2" in pretrained_model_name_or_path:
@@ -207,7 +207,8 @@ def execute_gold_sqls_parallel(db_files, sqls, num_cpus=1, timeout=1):
 def major_voting2(db_files, pred_sqls, sampling_num,
                   ground_truth_sqls, gold_db_files,
                   return_random_one_when_all_errors=True,
-                  num_cpus=10, timeout=30):
+                  num_cpus=10, timeout=30, 
+                  avg_logprobs=None):
     global execution_results
     global gold_execution_results
     mj_pred_correctness_list = []
@@ -231,6 +232,7 @@ def major_voting2(db_files, pred_sqls, sampling_num,
     upper_correctness_list = []
     top2_correctness_list = []
     question_idx = 0
+    data_idx = 0
     for result_idx in range(0, len(execution_results), sampling_num):
         major_voting_counting = dict()
         execution_results_of_one_sample = execution_results[result_idx: result_idx + sampling_num]
@@ -272,11 +274,18 @@ def major_voting2(db_files, pred_sqls, sampling_num,
                 'vote_list': [0],
                 'sql': [mj_pred_sql]
             })
+            
+            # 处理logprobs
+            if avg_logprobs is not None:
+                top2_correctness_list[-1]['avg_logprobs'] = [0.0]  # 默认值
+            
+            data_idx += sampling_num
             continue
 
         current_correctness_list = []
         current_correctness_sql = execution_results_of_one_sample[0]["sql"]
-        for res in execution_results_of_one_sample:
+        current_logprobs = []
+        for idx_in_sample, res in enumerate(execution_results_of_one_sample):
             query_result = res['query_result']
             valid = res['valid']
             current_is_correct = 0
@@ -288,12 +297,21 @@ def major_voting2(db_files, pred_sqls, sampling_num,
 
                 if query_result in major_voting_counting:
                     major_voting_counting[query_result]["votes"] += 1
+                    # 收集相同query_result的logprobs
+                    if avg_logprobs is not None and data_idx + idx_in_sample < len(avg_logprobs):
+                        major_voting_counting[query_result]["logprobs"].append(avg_logprobs[data_idx + idx_in_sample])
                 else:
+                    # 获取对应的logprob
+                    logprobs_list = []
+                    if avg_logprobs is not None and data_idx + idx_in_sample < len(avg_logprobs):
+                        logprobs_list = [avg_logprobs[data_idx + idx_in_sample]]
+                    
                     major_voting_counting[query_result] = {
                         'question_id': question_idx,
                         "votes": 1,
                         'correctness': current_is_correct,
-                        "sql": res["sql"]
+                        "sql": res["sql"],
+                        "logprobs": logprobs_list
                     }
 
             else:
@@ -315,6 +333,13 @@ def major_voting2(db_files, pred_sqls, sampling_num,
         top2_vote = top1_vote
         if len(all_votes) > 1:
             top2_vote = all_votes[1]
+
+        # 计算每个query_result的平均logprobs
+        for query_result, vote_info in major_voting_counting.items():
+            if vote_info["logprobs"]:
+                vote_info["avg_logprob"] = sum(vote_info["logprobs"]) / len(vote_info["logprobs"])
+            else:
+                vote_info["avg_logprob"] = 0.0
 
         major_vote = max(major_voting_counting.values(), key=lambda x: x["votes"])
         top1_key = None
@@ -340,10 +365,12 @@ def major_voting2(db_files, pred_sqls, sampling_num,
             "correctness_list": [mj_item['correctness'], mj_top2_item['correctness']] if top1_key != top2_key else [
                 mj_item['correctness']],
             'vote_list': [top1_vote, top2_vote] if top1_key != top2_key else [top1_vote],
-            'sql': [mj_item["sql"], mj_top2_item["sql"]] if top1_key != top2_key else [mj_item["sql"]]
+            'sql': [mj_item["sql"], mj_top2_item["sql"]] if top1_key != top2_key else [mj_item["sql"]],
+            'avg_logprobs': [mj_item["avg_logprob"], mj_top2_item["avg_logprob"]] if top1_key != top2_key else [mj_item["avg_logprob"]]
         }
 
         top2_correctness_list.append(top2_item)
+        data_idx += sampling_num
 
     return mj_pred_correctness_list, upper_correctness_list, top2_correctness_list
 
@@ -414,6 +441,7 @@ def run_eval_major_vote(gold_file, pred_file, db_path,
     db_files = []
     gold_db_files = []
     pred_sqls = []
+    avg_logprobs = []  # 收集所有avg_logprobs
     for pred_data in pred_results:
         db_id = pred_data["db_id"]
         db_file_path = os.path.join(db_path, db_id, db_id + ".sqlite")
@@ -421,6 +449,14 @@ def run_eval_major_vote(gold_file, pred_file, db_path,
         gold_db_files.append(db_file_path)
 
         pred_sqls.extend(pred_data[pred_sql_key])
+        # 收集对应的avg_logprobs
+        if "avg_logprobs" in pred_data:
+            avg_logprobs.extend(pred_data["avg_logprobs"])
+    
+    # 如果没有logprobs数据，则设为None
+    if not avg_logprobs:
+        avg_logprobs = None
+        
     assert len(pred_sqls) == len(db_files)
 
     (mj_pred_correctness_list, upper_correctness_list, top2_correctness_list) = major_voting2(db_files,
@@ -429,7 +465,8 @@ def run_eval_major_vote(gold_file, pred_file, db_path,
                                                                                               ground_truth_sqls=ground_truth_sqls,
                                                                                               gold_db_files=gold_db_files,
                                                                                               num_cpus=num_cpus,
-                                                                                              timeout=timeout)
+                                                                                              timeout=timeout,
+                                                                                              avg_logprobs=avg_logprobs)
     # save the (major-voting) predicted SQL so we can check it out later
     mj_pred_sqls = [item['sql'] for item in mj_pred_correctness_list]
     save_file = pred_file[:-5] + "_pred_major_voting_sqls.json"

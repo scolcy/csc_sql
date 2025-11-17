@@ -83,9 +83,9 @@ def run_eval_pipeline(opt, eval_mode="greedy_search", eval_step=None):
         sql_generate_file = run_eval_by_cmd(opt=opt, eval_mode=eval_mode, eval_step="sql_generate")
         # sql_generate_file = "outputs/20251016_215443/sampling_think_sql_generate.json"
          # sql_generate_file = "outputs/20251016_222543/sampling_think_sql_generate.json"
-        # result_file = sql_generate_file
+        result_file = sql_generate_file
         opt.selection_vote = sql_generate_file
-        # result_file = run_eval_by_cmd(opt=opt, eval_mode=eval_mode, eval_step="sql_merge")
+        result_file = run_eval_by_cmd(opt=opt, eval_mode=eval_mode, eval_step="sql_merge")
     else:
         result_file = run_eval_by_cmd(opt=opt, eval_mode=eval_mode, eval_step=eval_step)
 
